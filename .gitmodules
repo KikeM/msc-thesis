@@ -1,0 +1,3 @@
+[submodule "code/romtime"]
+	path = code/romtime
+	url = https://github.com/KikeM/romtime
