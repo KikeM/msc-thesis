@@ -51,41 +51,37 @@ fom_params = dict(
 
 reductor = Reductor(grid=grid)
 rnd = np.random.RandomState(0)
-mu_space = reductor.build_sampling_space(num=1, rnd=rnd)
+mu_space = reductor.build_sampling_space(num=5, rnd=rnd)
 mu_space = list(mu_space)
 
 # -----------------------------------------------------------------------------
 # ROM
 tols = [0.21, 0.41, 0.61, 0.81, 1.0]
-
-tols = [0.81]
-
-cartesian_product = product([True], [True], [True, False], [True])
+tols = [0.21]
 
 _errors = []
 cols = []
 
-EVALUATE = True
-for mass, stiffness, convection, rhs in cartesian_product:
+EVALUATE = False
+for tol in tols:
 
-    models = {
-        OperatorType.MASS: mass,
-        OperatorType.STIFFNESS: stiffness,
-        OperatorType.CONVECTION: convection,
-        OperatorType.RHS: rhs,
-    }
-
-    name = "".join([str(value)[0] for value in models.values()])
-    cols.append(name)
-
+    # -------------------------------------------------------------------------
     # Reduced basis parameters
     rom_params = {
         RomParameters.NUM_SNAPSHOTS: None,
         RomParameters.TOL_TIME: None,
-        RomParameters.TOL_MU: None,
+        RomParameters.TOL_MU: tol,
     }
 
+    # -------------------------------------------------------------------------
     # (M)DEIM parametrization
+    models = {
+        OperatorType.MASS: True,
+        OperatorType.STIFFNESS: True,
+        OperatorType.CONVECTION: True,
+        OperatorType.RHS: True,
+    }
+
     tf, nt = domain[Domain.T], domain[Domain.NT]
     ts = np.linspace(tf / nt, tf, nt)
 
@@ -96,10 +92,10 @@ for mass, stiffness, convection, rhs in cartesian_product:
     mdeim_params = {
         RomParameters.TS: ts,
         RomParameters.NUM_SNAPSHOTS: None,
-        # RomParameters.NUM_MU: 2,
-        # RomParameters.NUM_TIME: 50,
     }
 
+    # -------------------------------------------------------------------------
+    # (M)DEIM parametrization
     hrom = HyperReducedOrderModelMoving(
         grid=grid,
         fom_params=fom_params,
@@ -119,57 +115,28 @@ for mass, stiffness, convection, rhs in cartesian_product:
     # hrom.mdeim_convection.plot_errors()
     # hrom.deim_rhs.plot_errors()
 
-    _models = [
-        hrom.mdeim_mass,
-        hrom.mdeim_stiffness,
-        hrom.mdeim_convection,
-        hrom.deim_rhs,
-    ]
-
     hrom.run_offline_rom(mu_space=mu_space)
 
     hrom.generate_summary()
     # hrom.plot_spectrums()
     hrom.evaluate_online(mu_space=mu_space)
 
-    # timesteps = hrom.rom.timesteps[1:]
-    # for _, errors in hrom.rom.errors.items():
-    #     _errors.append(deepcopy(errors))
+    timesteps = hrom.rom.timesteps[1:]
+    for _, errors in hrom.rom.errors.items():
+        _errors.append(deepcopy(errors))
 
     pprint(hrom.summary_basis)
 
-    for model in _models:
-
-        errors_rom = model.errors_rom
-        name = model.name
-
-        for error in errors_rom.values():
-            plt.plot(model.tree_walk_params["ts"], np.log10(error), label=name)
-
-    hrom.plot_errors(new=False, label="Reduced Basis", show=False)
-
-    title = "Online Errors"
-    if convection:
-        title += " - Convection: MDEIM"
-    else:
-        title += " - Convection: FOM"
-
-    plt.title(title)
-    plt.legend(loc="center right")
-
-    # plt.grid(True)
-    plt.show()
-
     del hrom
 
-# errors = np.array(np.log10(_errors)).T
+errors = np.array(np.log10(_errors)).T
 
 # DataFrame(errors, columns=cols).to_csv("errors.csv")
 
-# plt.plot(timesteps, errors)
-# plt.legend(cols)
-# plt.grid(True)
-# plt.show()
+plt.plot(timesteps, errors)
+plt.legend(cols)
+plt.grid(True)
+plt.show()
 
 # labels = ["{:.2f}".format(tol) for tol in tols]
 # plt.legend(labels, title="Energy ratio", ncol=2, loc="best")

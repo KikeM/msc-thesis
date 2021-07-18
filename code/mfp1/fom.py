@@ -48,66 +48,63 @@ sampler = parameter_manager.build_sampling_space(num=2, rnd=rnd)
 # -----------------------------------------------------------------------------
 # Mesh Convergence
 
-# mu = list(sampler)[0]
-# mu = round_parameters(mu)
+mu = list(sampler)[0]
+mu = round_parameters(mu)
 
 # NXs = [1e1, 1e2, 5e2, 1e3, 2e3, 5e3, 1e4]
-# NXs = [1e1, 5e1, 1e2, 5e2, 1e3]
+NXs = [1e1, 5e1, 1e2, 5e2, 1e3]
 
-# index = []
-# _results = []
-# domain["nt"] = int(5e3)
-# for idx, nx in tqdm(enumerate(NXs), leave=True, desc="Mesh Refinement"):
+index = []
+_results = []
+domain["nt"] = int(5e3)
+for idx, nx in tqdm(enumerate(NXs), leave=True, desc="Mesh Refinement"):
 
-#     domain["nx"] = int(nx)
+    domain["nx"] = int(nx)
 
-#     fom = HeatEquationMovingSolver(
-#         domain=domain,
-#         dirichlet=boundary_conditions,
-#         parameters=None,
-#         forcing_term=forcing_term,
-#         u0=u0,
-#         filename=None,
-#         degrees=1,
-#         project_u0=False,
-#         exact_solution=ue,
-#         Lt=Lt,
-#         dLt_dt=dLt_dt,
-#     )
+    fom = HeatEquationMovingSolver(
+        domain=domain,
+        dirichlet=boundary_conditions,
+        parameters=None,
+        forcing_term=forcing_term,
+        u0=u0,
+        filename=None,
+        degrees=1,
+        project_u0=False,
+        exact_solution=ue,
+        Lt=Lt,
+        dLt_dt=dLt_dt,
+    )
 
-#     fom.setup()
-#     fom.update_parametrization(new=mu)
-#     fom.solve()
+    fom.setup()
+    fom.update_parametrization(new=mu)
+    fom.solve()
 
-#     index.append(int(nx))
-#     tf = max(fom.errors.keys())
-#     final_error = fom.errors[tf]
+    index.append(int(nx))
+    tf = max(fom.errors.keys())
+    final_error = fom.errors[tf]
 
-#     _results.append(final_error)
+    _results.append(final_error)
 
-# results = pd.Series(_results, index=index)
-# results_log = pd.Series(np.log10(_results), index=index)
-# results_log_log = pd.Series(np.log10(_results), index=np.log10(index))
+results = pd.Series(_results, index=index)
+results_log = pd.Series(np.log10(_results), index=index)
+results_log_log = pd.Series(np.log10(_results), index=np.log10(index))
 
-# results.to_csv("fom_mesh_convergence.csv")
+results.to_csv("fom_mesh_convergence.csv")
 
 # options = {"marker": "x", "linestyle": "--"}
 # results.plot(**options)
 # plt.grid(True)
-# # plt.xlabel("dt")
 # plt.xlabel("nx")
 # plt.ylabel("Error(tf)")
 # plt.show()
 
 # results_log.plot(**options)
 # plt.grid(True)
-# # plt.xlabel("dt")
 # plt.xlabel("nx")
 # plt.ylabel("log10 Error(tf)")
 # plt.show()
 
 # results_log_log.plot(**options)
-# # plt.xlabel("log10 dt")
 # plt.xlabel("log10 nx")
 # plt.ylabel("log10 Error(tf)")
 # plt.grid(True)
@@ -176,68 +173,68 @@ sampler = parameter_manager.build_sampling_space(num=2, rnd=rnd)
 # plt.grid(True)
 # plt.show()
 
-# results.to_csv("fom_mesh_convergence.csv")
+# results.to_csv("fom_timestep_convergence.csv")
 
 # -----------------------------------------------------------------------------
 # Mesh velocity
 
-mu = list(sampler)[0]
-mu = round_parameters(mu)
+# mu = list(sampler)[0]
+# mu = round_parameters(mu)
 
-N = 5
-omegas = np.linspace(omega_min, omega_max, num=N)
+# N = 5
+# omegas = np.linspace(omega_min, omega_max, num=N)
 
-index = []
-_results = []
-for idx, omega in tqdm(enumerate(omegas), leave=True, desc="ALE velocity"):
+# index = []
+# _results = []
+# for idx, omega in tqdm(enumerate(omegas), leave=True, desc="ALE velocity"):
 
-    fom = HeatEquationMovingSolver(
-        domain=domain,
-        dirichlet=boundary_conditions,
-        parameters=None,
-        forcing_term=forcing_term,
-        u0=u0,
-        filename=None,
-        degrees=1,
-        project_u0=False,
-        exact_solution=ue,
-        Lt=Lt,
-        dLt_dt=dLt_dt,
-    )
+#     fom = HeatEquationMovingSolver(
+#         domain=domain,
+#         dirichlet=boundary_conditions,
+#         parameters=None,
+#         forcing_term=forcing_term,
+#         u0=u0,
+#         filename=None,
+#         degrees=1,
+#         project_u0=False,
+#         exact_solution=ue,
+#         Lt=Lt,
+#         dLt_dt=dLt_dt,
+#     )
 
-    fom.setup()
+#     fom.setup()
 
-    mu["omega"] = omega
-    fom.update_parametrization(new=mu)
+#     mu["omega"] = omega
+#     fom.update_parametrization(new=mu)
 
-    fom.solve()
+#     fom.solve()
 
-    index.append(omega)
-    tf = max(fom.errors.keys())
-    final_error = fom.errors[tf]
+#     index.append(omega)
+#     tf = max(fom.errors.keys())
+#     final_error = fom.errors[tf]
 
-    _results.append(final_error)
+#     _results.append(final_error)
 
-    del fom
+#     del fom
 
-results = pd.Series(_results, index=index)
-results_log = pd.Series(np.log10(_results), index=index)
-results_log_log = pd.Series(np.log10(_results), index=np.log10(index))
+# results = pd.Series(_results, index=index)
+# results_log = pd.Series(np.log10(_results), index=index)
+# results_log_log = pd.Series(np.log10(_results), index=np.log10(index))
 
-results.to_csv("fom_ale_convergence.csv")
+# results.to_csv("fom_ale_convergence.csv")
 
-options = {"marker": "x", "linestyle": "--"}
-results.plot(**options)
-plt.grid(True)
-plt.xlabel("$\omega$")
-plt.ylabel("Error(tf)")
-plt.show()
+# options = {"marker": "x", "linestyle": "--"}
+# results.plot(**options)
+# plt.grid(True)
+# plt.xlabel("$\omega$")
+# plt.ylabel("Error(tf)")
+# plt.show()
 
-results_log.plot(**options)
-plt.grid(True)
-plt.xlabel("$\omega$")
-plt.ylabel("log10 Error(tf)")
-plt.show()
+# results_log.plot(**options)
+# plt.grid(True)
+# plt.xlabel("$\omega$")
+# plt.ylabel("log10 Error(tf)")
+# plt.show()
 
 # -----------------------------------------------------------------------------
 # Plot for different parametrizations
