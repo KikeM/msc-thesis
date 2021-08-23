@@ -165,5 +165,3 @@ Ah_int = hrom.mdeim_stiffness.interpolate(
     which=OperatorType.FOM,
 )
 Ah_int = Ah_int.todense()
-
-breakpoint()
