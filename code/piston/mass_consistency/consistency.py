@@ -131,7 +131,7 @@ for idx, nt in enumerate(nts):
     solver.update_parametrization(new=mu)
     solver.solve()
 
-    ts = solver.timesteps[1:]
+    ts = solver.timesteps
     uh_set = list(solver.solutions.values())
 
     if idx == 3:

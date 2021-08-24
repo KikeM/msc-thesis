@@ -1,0 +1,8 @@
+,basis-shape-after-tree-walk,basis-shape-final
+reduced-basis,274,113
+RHS,12,4
+Mass,5,1
+Stiffness,5,1
+nonlinear,565,113
+convection,10,2
+nonlinear-lifting,5,1
