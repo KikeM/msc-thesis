@@ -20,16 +20,16 @@ fenics.set_log_level(100)
 # Parametrization
 grid_params = {
     PistonParameters.A0: {
-        "min": 9.0,
-        "max": 15.0,
+        "min": 18.0,
+        "max": 25.0,
     },
     PistonParameters.OMEGA: {
         "min": 15.0,
-        "max": 25.0,
+        "max": 30.0,
     },
     PistonParameters.DELTA: {
-        "min": 0.1,
-        "max": 0.15,
+        "min": 0.15,
+        "max": 0.3,
     },
     # Constants
     PistonParameters.ALPHA: {
