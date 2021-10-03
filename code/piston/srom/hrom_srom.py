@@ -43,16 +43,16 @@ EVALUATE_DEIM = False
 
 # -----------------------------------------------------------------------------
 # Snapshots size
-NUM_OFFLINE = 1
-NUM_ONLINE = 1
+NUM_OFFLINE = 10
+NUM_ONLINE = 5
 ROM_KEEP = 22
 SROM_KEEP = 35
 SROM_TRUNCATE = SROM_KEEP - ROM_KEEP
 SROM_TRUNCATE = 5
 
-NUM_OFFLINE_DEIM = 1
-NUM_ONLINE_DEIM = 1
-NUM_ONLINE_NDEIM = 1
+NUM_OFFLINE_DEIM = 10
+NUM_ONLINE_DEIM = 10
+NUM_ONLINE_NDEIM = 5
 
 # -----------------------------------------------------------------------------
 # Tolerances
@@ -79,12 +79,12 @@ NT = 5e2
 # -----------------------------------------------------------------------------
 # HROM Models
 models = {
-    OperatorType.MASS: False,
-    OperatorType.STIFFNESS: False,
-    OperatorType.CONVECTION: False,
-    OperatorType.NONLINEAR: False,
-    OperatorType.NONLINEAR_LIFTING: False,
-    OperatorType.RHS: False,
+    OperatorType.MASS: True,
+    OperatorType.STIFFNESS: True,
+    OperatorType.CONVECTION: True,
+    OperatorType.NONLINEAR: True,
+    OperatorType.NONLINEAR_LIFTING: True,
+    OperatorType.RHS: True,
 }
 
 # -----------------------------------------------------------------------------
