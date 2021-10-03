@@ -37,8 +37,8 @@ grid_params = {
 # -----------------------------------------------------------------------------
 # Testing phase
 LOAD_BASIS = False
-VALIDATE_ROM = False
-EVALUATE_DEIM = False
+VALIDATE_ROM = True
+EVALUATE_DEIM = True
 
 
 # -----------------------------------------------------------------------------
@@ -74,13 +74,13 @@ RND_DEIM = 440
 # -----------------------------------------------------------------------------
 # Space-Time Domain
 NX = 1e3
-NT = 5e2
+NT = 1e2
 
 # -----------------------------------------------------------------------------
 # HROM Models
 models = {
     OperatorType.MASS: False,
-    OperatorType.STIFFNESS: False,
+    OperatorType.STIFFNESS: True,
     OperatorType.CONVECTION: False,
     OperatorType.NONLINEAR: False,
     OperatorType.NONLINEAR_LIFTING: False,
@@ -93,7 +93,7 @@ domain = {
     Domain.L0: 1.0,
     Domain.NX: int(NX),
     Domain.NT: int(NT),
-    Domain.T: 1.0,
+    Domain.T: 0.5,
 }
 
 grid = {
