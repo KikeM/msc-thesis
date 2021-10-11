@@ -36,7 +36,7 @@ grid_params = {
 
 # -----------------------------------------------------------------------------
 # Testing phase
-LOAD_BASIS = False
+LOAD_BASIS = True
 VALIDATE_ROM = False
 EVALUATE_DEIM = False
 
@@ -44,11 +44,10 @@ EVALUATE_DEIM = False
 # -----------------------------------------------------------------------------
 # Snapshots size
 NUM_OFFLINE = 10
-NUM_ONLINE = 5
-ROM_KEEP = 22
-SROM_KEEP = 35
+NUM_ONLINE = 2
+ROM_KEEP = 10
+SROM_KEEP = 15
 SROM_TRUNCATE = SROM_KEEP - ROM_KEEP
-SROM_TRUNCATE = 5
 
 NUM_OFFLINE_DEIM = 10
 NUM_ONLINE_DEIM = 10
@@ -68,7 +67,7 @@ TOL_MU_NDEIM = None
 # -----------------------------------------------------------------------------
 # Seeds
 RND_OFFLINE = 0
-RND_ONLINE = 2020
+RND_ONLINE = 5656
 RND_DEIM = 440
 
 # -----------------------------------------------------------------------------

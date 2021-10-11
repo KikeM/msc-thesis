@@ -1,6 +1,9 @@
+from pprint import pprint
+
 import fenics
 import matplotlib.pyplot as plt
 import numpy as np
+import ujson
 from romtime.conventions import (
     BDF,
     FIG_KWARGS,
@@ -12,11 +15,6 @@ from romtime.fom import OneDimensionalBurgers
 from romtime.parameters import get_uniform_dist
 from romtime.problems.piston import define_piston_problem
 from sklearn.model_selection import ParameterSampler
-import pandas as pd
-from copy import deepcopy
-
-import ujson
-
 from tqdm import tqdm
 
 fenics.set_log_level(100)
@@ -294,12 +292,14 @@ grid = {
 
 
 N_SAMPLES = 1
-BDF_SCHEME = BDF.TWO
+BDF_SCHEME = BDF.ONE
 
 print("BDF:", BDF_SCHEME)
 
 mu = build_sampling_space(grid=grid, num=N_SAMPLES, rnd=42)
 mu = mu[0]
+
+pprint(mu)
 
 with open(f"mu_bdf_{BDF_SCHEME}.json", mode="w") as fp:
     ujson.dump(mu, fp)
