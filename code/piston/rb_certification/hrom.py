@@ -144,8 +144,10 @@ deim_nonlinear_params = {
     RomParameters.TOL_TIME: TOL_TIME_NDEIM,
 }
 
-N_ROM = [5, 10, 15, 20]
-N_SROM = [1, 5, 10]
+# N_ROM = [5, 10, 15, 20]
+# N_SROM = [1, 5, 10]
+N_ROM = [15]
+N_SROM = [1]
 
 combinations = list(product(N_ROM, N_SROM))
 combinations = sorted(combinations, key=lambda x: x[0] + x[1], reverse=True)
