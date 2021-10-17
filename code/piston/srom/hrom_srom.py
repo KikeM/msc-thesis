@@ -36,7 +36,7 @@ grid_params = {
 
 # -----------------------------------------------------------------------------
 # Testing phase
-LOAD_BASIS = True
+LOAD_BASIS = False
 VALIDATE_ROM = False
 EVALUATE_DEIM = False
 
@@ -44,14 +44,15 @@ EVALUATE_DEIM = False
 # -----------------------------------------------------------------------------
 # Snapshots size
 NUM_OFFLINE = 10
-NUM_ONLINE = 2
-ROM_KEEP = 10
+NUM_ONLINE = 5
+ROM_KEEP = 7
 SROM_KEEP = 15
 SROM_TRUNCATE = SROM_KEEP - ROM_KEEP
+SROM_TRUNCATE = 1
 
 NUM_OFFLINE_DEIM = 10
-NUM_ONLINE_DEIM = 10
-NUM_ONLINE_NDEIM = 5
+NUM_ONLINE_DEIM = 1
+NUM_ONLINE_NDEIM = 1
 
 # -----------------------------------------------------------------------------
 # Tolerances
