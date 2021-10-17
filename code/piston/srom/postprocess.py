@@ -18,7 +18,7 @@ from romtime.conventions import (
 from romtime.utils import singular_to_energy
 from tqdm import tqdm
 
-sns.set_theme(context="paper", palette="viridis")
+sns.set_theme(context="paper")
 
 
 def plot_mass_conservation(ts, mass_change, outflow, title, save):
@@ -197,41 +197,41 @@ plt.close()
 # plt.close()
 
 
-# # -----------------------------------------------------------------------------
-# # Errors
-# with open("errors_estimator.pkl", mode="rb") as fp:
-#     results_sacrificial = pickle.load(fp)
+# -----------------------------------------------------------------------------
+# Errors
+with open("errors_estimator.pkl", mode="rb") as fp:
+    results_sacrificial = pickle.load(fp)
 
-# # Validation
-# VALIDATION = Stage.VALIDATION
-# ONLINE = Stage.ONLINE
+# Validation
+VALIDATION = Stage.VALIDATION
+ONLINE = Stage.ONLINE
 
-# desc = "(ROM ERRORS)"
-# for stage in tqdm([VALIDATION, ONLINE], desc=desc):
+desc = "(ROM ERRORS)"
+for stage in tqdm([VALIDATION, ONLINE], desc=desc):
 
-#     if stage not in results_sacrificial:
-#         continue
+    if stage not in results_sacrificial:
+        continue
 
-#     payload = results_sacrificial[stage]
+    payload = results_sacrificial[stage]
 
-#     for idx_mu, errors in tqdm(payload.items(), leave=False):
+    for idx_mu, errors in tqdm(payload.items(), leave=False):
 
-#         errors = pd.DataFrame(errors)
+        errors = pd.DataFrame(errors)
 
-#         estimator = errors[Errors.ESTIMATOR].copy()
-#         errors = errors.drop(Errors.ESTIMATOR, axis=1)
+        estimator = errors[Errors.ESTIMATOR].copy()
+        errors = errors.drop(Errors.ESTIMATOR, axis=1)
 
-#         ax = errors.plot(grid=True, logy=True)
-#         ax.plot(estimator.index, estimator, label=Errors.ESTIMATOR, linestyle="--")
+        ax = errors.plot(grid=True, logy=True)
+        ax.plot(estimator.index, estimator, label=Errors.ESTIMATOR, linestyle="--")
 
-#         ax.legend()
-#         title = f"{idx_mu} - {stage}"
-#         ax.set_title(title)
+        ax.legend()
+        title = f"{idx_mu} - {stage}"
+        ax.set_title(title)
 
-#         figname = f"{idx_mu}_{stage}.png"
-#         plt.savefig(figname, **FIG_KWARGS)
+        figname = f"{idx_mu}_{stage}.png"
+        plt.savefig(figname, **FIG_KWARGS)
 
-#         plt.close()
+        plt.close()
 
 
 # # -----------------------------------------------------------------------------
