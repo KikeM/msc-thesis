@@ -29,7 +29,7 @@ We present a Reduced Order Model (ROM) for a one-dimensional gas dynamics proble
    
    All in all, our approach to the construction of the Reduced Order Model is purely algebraic
    and makes no use of Full Order structures in its resolution, 
-   thus achieving a perfect \textit{offline-online} split.
+   thus achieving a perfect offline-online split.
    A concise description of the reducing procedure is provided, 
    together with a posteriori error estimations, obtained via model truncation,
    to certify the Reduced Order Model.
