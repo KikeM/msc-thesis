@@ -116,7 +116,7 @@ models = {
     OperatorType.MASS: True,
     OperatorType.STIFFNESS: True,
     OperatorType.CONVECTION: True,
-    OperatorType.NONLINEAR: True,
+    OperatorType.TRILINEAR: True,
     OperatorType.NONLINEAR_LIFTING: True,
     OperatorType.RHS: True,
 }
@@ -241,6 +241,6 @@ hrom.plot_energy(save="energy", show=False)
 hrom.mdeim_mass.plot_errors(show=False, save=True)
 hrom.mdeim_stiffness.plot_errors(show=False, save=True)
 hrom.mdeim_convection.plot_errors(show=False, save=True)
-hrom.mdeim_nonlinear.plot_errors(show=False, save=True)
-hrom.mdeim_nonlinear_lifting.plot_errors(show=False, save=True)
+hrom.mdeim_trilinear.plot_errors(show=False, save=True)
+hrom.mdeim_trilinear_lifting.plot_errors(show=False, save=True)
 hrom.deim_rhs.plot_errors(show=False, save=True)
