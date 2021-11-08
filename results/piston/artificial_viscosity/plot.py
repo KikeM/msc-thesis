@@ -31,8 +31,8 @@ outflows.columns = outflows.columns.astype(str)
 
 print(outflows.columns)
 
-
-piston = df["L"].squeeze()
+outflows = outflows.div(20)
+piston = df["L"].squeeze().div(20)
 piston.name = "piston"
 
 # Include initial state
@@ -50,7 +50,7 @@ top.plot(outflows.index, outflows["1.0e-06"], label=damping_label)
 top.plot(outflows.index, outflows["1.0e-10"], label=convective_label)
 top.plot(piston.index, piston.values, linestyle="--", label="Piston", alpha=0.75)
 top.set_xlabel("$t$ (s)")
-top.set_ylabel("$u$ (m/s)")
+top.set_ylabel("$\\frac{u}{a_0}$ (Outflow)")
 top.set_title("Artificial Viscosity Comparison")
 top.legend()
 
@@ -81,8 +81,8 @@ sns.scatterplot(
     alpha=0.75,
 )
 # bottom.legend()
-bottom.set_xlabel("Piston (m/s)")
-bottom.set_ylabel("Outflow (m/s)")
+bottom.set_xlabel("$\\frac{L'(t)}{a_0}$ (Piston)")
+bottom.set_ylabel("$\\frac{u}{a_0}$ (Outflow)")
 bottom.set_title("Phase Plot")
 
 # plt.show()
