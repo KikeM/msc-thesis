@@ -48,7 +48,7 @@ EVALUATE_DEIM = False
 # -----------------------------------------------------------------------------
 # Snapshots size
 NUM_OFFLINE = None
-NUM_ONLINE = 1
+NUM_ONLINE = 5
 ROM_KEEP = 10
 SROM_KEEP = 15
 SROM_TRUNCATE = SROM_KEEP - ROM_KEEP
@@ -144,11 +144,14 @@ deim_nonlinear_params = {
     RomParameters.TOL_TIME: TOL_TIME_NDEIM,
 }
 
-N_ROM = [5, 10, 15, 20]
-N_SROM = [1, 5, 10]
+# N_ROM = [5, 10, 15, 20]
+# N_SROM = [1, 5, 10]
+
+N_ROM = [10]
+N_SROM = [15]
 
 combinations = list(product(N_ROM, N_SROM))
-combinations = sorted(combinations, key=lambda x: x[0] + x[1], reverse=True)
+combinations = sorted(combinations, key=lambda x: 2 * x[0] + x[1], reverse=True)
 print(combinations)
 
 for n_rom, n_truncation in tqdm(combinations, desc="ROM-SROM Combinations"):
