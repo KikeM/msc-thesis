@@ -1,6 +1,7 @@
-from os import name
+from os import CLD_CONTINUED
 import pickle
 from pathlib import Path
+import ujson
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,12 +12,13 @@ from romtime.conventions import (
     Errors,
     MassConservation,
     OperatorType,
+    PistonParameters,
     ProbeLocations,
     ProblemType,
     Stage,
     Treewalk,
 )
-from romtime.utils import singular_to_energy
+from romtime.utils import singular_to_energy, singular_to_pod_error
 from tqdm import tqdm
 
 sns.set_theme(context="paper", palette="colorblind")
@@ -31,25 +33,25 @@ def plot_mass_conservation(ts, mass_change, outflow, title, save):
     ax_mass.plot(
         ts,
         mass_change,
-        label="$\\frac{d}{dt} \\int \\rho dx$",
+        label="$\\frac{1}{\\rho_0 a_0}\\frac{d}{dt} \\int \\rho dx$",
     )
     ax_mass.plot(
         ts,
         outflow,
         linestyle="--",
-        label="Outflow $(\\rho(0,t)u(0,t))$",
+        label="Outflow $\\frac{\\rho(0,t)u(0,t)}{\\rho_0 a_0}$",
     )
     ax_mass.legend(ncol=2, loc="center", bbox_to_anchor=(0.5, -0.175))
     ax_mass.grid(True)
     ax_mass.set_title(title)
-    ax_mass.set_ylabel("Flow")
+    ax_mass.set_ylabel("Mass Flow (Non-dimensional)")
 
     #  -------------------------------------------------------------------------
     #  Mass error
     mc = mass_change - outflow
-    mc = np.log10(np.abs(mc))
+    mc = np.abs(mc)
 
-    ax_error.plot(
+    ax_error.semilogy(
         ts,
         mc,
         color="black",
@@ -60,7 +62,7 @@ def plot_mass_conservation(ts, mass_change, outflow, title, save):
 
     ax_error.grid(True)
     ax_error.set_xlabel("t (s)")
-    ax_error.set_ylabel("Error (log10)")
+    ax_error.set_ylabel("$\\frac{MD}{\\rho_0 a_0}$")
 
     plt.savefig(save + ".png", **FIG_KWARGS)
     plt.close()
@@ -111,14 +113,38 @@ def plot_probes_comparison(comparison, save):
 
     fig, ax = plt.subplots()
 
-    ax.plot(comparison[ProblemType.SROM], label="SROM")
+    options_piston = dict(linestyle="--", alpha=0.25)
+
+    # ax.plot(comparison[ProblemType.SROM], label="SROM")
     ax.plot(comparison[ProblemType.ROM], label="ROM")
     ax.plot(fom, label="FOM", linestyle="-.", alpha=0.75)
-    ax.plot(piston, label=PISTON, color="purple", linestyle="--", alpha=0.5)
+    ax.plot(piston, label=PISTON.capitalize(), color="purple", **options_piston)
     ax.grid(True)
     ax.legend()
-    ax.set_ylabel("$u$ (m/s)")
+    ax.set_ylabel("$\\frac{u}{a_0}$")
     ax.set_xlabel("$t$ (s)")
+    ax.set_title("Outflow Model Comparison")
+
+    # Piston bands
+    _max = piston.max() * (1.005)
+    _min = piston.min() * (1.005)
+
+    ax.hlines(
+        y=_max,
+        xmin=piston.index[0],
+        xmax=piston.index[-1],
+        linewidth=0.75,
+        color="grey",
+        alpha=0.25,
+    )
+    ax.hlines(
+        y=_min,
+        xmin=piston.index[0],
+        xmax=piston.index[-1],
+        linewidth=0.75,
+        color="grey",
+        alpha=0.25,
+    )
 
     plt.savefig(save + ".png", **FIG_KWARGS)
     plt.close()
@@ -136,18 +162,18 @@ def plot_probes_comparison(comparison, save):
 # plt.savefig("energy_rb.png", **FIG_KWARGS)
 # plt.close()
 
-# # -----------------------------------------------------------------------------
-# # Sigmas
-# with open("summary_sigmas.pkl", mode="rb") as fp:
-#     summary_sigmas = pickle.load(fp)
+# -----------------------------------------------------------------------------
+# Sigmas
+with open("summary_sigmas.pkl", mode="rb") as fp:
+    summary_sigmas = pickle.load(fp)
 
-# sigmas_nonlinear = summary_sigmas[OperatorType.NONLINEAR][Treewalk.SPECTRUM_MU]
-# sigmas_rb = summary_sigmas[OperatorType.REDUCED_BASIS][Treewalk.SPECTRUM_MU]
+sigmas_nonlinear = summary_sigmas[OperatorType.NONLINEAR][Treewalk.SPECTRUM_MU]
+sigmas_rb = summary_sigmas[OperatorType.REDUCED_BASIS][Treewalk.SPECTRUM_MU]
 
-# sigmas = pd.Series(sigmas_nonlinear, name=OperatorType.NONLINEAR)
-# sigmas = pd.concat([sigmas, pd.Series(sigmas_rb, name="RB")], axis=1)
-# sigmas = sigmas.apply(np.log10)
-# sigmas.to_csv("sigmas.csv")
+sigmas = pd.Series(sigmas_nonlinear, name=OperatorType.NONLINEAR)
+sigmas = pd.concat([sigmas, pd.Series(sigmas_rb, name="RB")], axis=1)
+#  sigmas = sigmas.apply(np.log10)
+sigmas.to_csv("sigmas.csv")
 
 # sigmas = sigmas.loc[:65, "RB"]
 # ax_sigmas = sigmas.plot()
@@ -202,95 +228,121 @@ def plot_probes_comparison(comparison, save):
 # plt.show()
 # plt.close()
 
+# -----------------------------------------------------------------------------
+# Mu Space
+with open("mu_space.json", "r") as fp:
+    mu_space = ujson.load(fp)
+mu_space = mu_space["online"]
 
-# # -----------------------------------------------------------------------------
-# # Errors (aggregation)
-# paths = list(Path(".").glob("errors_estimator*.pkl"))
-# sigmas = pd.read_csv("sigmas.csv", index_col=0)["RB"].squeeze()
+mu_space = pd.DataFrame(mu_space)
+breakpoint()
+mu_space.to_latex()
 
-# # Normalized sigmas
-# sigmas_hat = np.log10(sigmas)
-# energies = singular_to_energy(sigmas=sigmas)
+# -----------------------------------------------------------------------------
+# Errors (aggregation)
+with open("mu_space.json", "r") as fp:
+    mu_space = ujson.load(fp)
+mu_space = mu_space["online"]
+paths = list(Path(".").glob("errors_estimator*.pkl"))
+sigmas = pd.read_csv("sigmas.csv", index_col=0)["RB"].squeeze()
 
-# ONLINE = Stage.ONLINE
+# Normalized sigmas
+sigmas_hat = np.log10(sigmas)
+energies = singular_to_energy(sigmas=sigmas)
 
-# desc = "(ROM ERRORS)"
+ONLINE = Stage.ONLINE
 
-# results = []
-# for path in tqdm(paths, desc=desc, total=len(paths)):
+desc = "(ROM ERRORS)"
 
-#     with open(path, mode="rb") as fp:
-#         results_sacrificial = pickle.load(fp)
+results = []
+for path in tqdm(paths, desc=desc, total=len(paths)):
 
-#     stem = path.stem.split("_")
-#     n_rom = int(stem[3])
-#     n_srom = int(stem[5])
+    with open(path, mode="rb") as fp:
+        results_sacrificial = pickle.load(fp)
 
-#     payload = results_sacrificial[ONLINE]
+    stem = path.stem.split("_")
+    n_rom = int(stem[3])
+    n_srom = int(stem[5])
 
-#     errors = payload[0]
-#     errors = pd.DataFrame(errors)
+    payload = results_sacrificial[ONLINE]
 
-#     # -------------------------------------------------------------------------
-#     # ROM
-#     idx_rom = n_rom - 1
-#     energy = energies[idx_rom]
-#     sigma_hat = sigmas_hat[idx_rom]
+    for idx_mu, errors in payload.items():
 
-#     N_error = errors.shape[0]
-#     error = np.linalg.norm(errors[Errors.ROM])
-#     error /= np.sqrt(N_error)
+        errors = pd.DataFrame(errors)
 
-#     result = {
-#         "error": error,
-#         "N": n_rom,
-#         "sigma_hat": sigma_hat,
-#         "energy": energy,
-#     }
+        # -------------------------------------------------------------------------
+        # ROM
+        idx_rom = n_rom - 1
+        energy = energies[idx_rom]
+        sigma_hat = sigmas_hat[idx_rom]
 
-#     results.append(result)
+        N_error = errors.shape[0]
+        error = np.linalg.norm(errors[Errors.ROM])
+        error /= np.sqrt(N_error)
 
-#     # -------------------------------------------------------------------------
-#     # SROM
-#     idx_rom = n_srom - 1
-#     energy = energies[idx_rom]
-#     sigma_hat = sigmas_hat[idx_rom]
+        result = {
+            "error": error,
+            "N": n_rom,
+            "sigma_hat": sigma_hat,
+            "energy": energy,
+            "idx_mu": idx_mu,
+            "piston_mach": mu_space[idx_mu]["piston_mach"],
+        }
 
-#     error = np.linalg.norm(errors[Errors.SACRIFICIAL])
-#     error /= np.sqrt(N_error)
+        results.append(result)
 
-#     result = {
-#         "error": error,
-#         "N": n_srom,
-#         "sigma_hat": sigma_hat,
-#         "energy": energy,
-#     }
-#     results.append(result)
+        # -------------------------------------------------------------------------
+        # SROM
+        idx_rom = n_srom - 1
+        energy = energies[idx_rom]
+        sigma_hat = sigmas_hat[idx_rom]
+
+        error = np.linalg.norm(errors[Errors.SACRIFICIAL])
+        error /= np.sqrt(N_error)
+
+        result = {
+            "error": error,
+            "N": n_srom,
+            "sigma_hat": sigma_hat,
+            "energy": energy,
+            "idx_mu": idx_mu,
+            "piston_mach": mu_space[idx_mu]["piston_mach"],
+        }
+        results.append(result)
 
 
-# results = pd.DataFrame(results)
-# results = results.drop_duplicates(subset="N")
-# results = results.sort_values(by="N")
+results = pd.DataFrame(results)
+results = results.drop_duplicates(subset=["N", "idx_mu"])
+results = results.sort_values(by="N")
+fig, (left, right) = plt.subplots(nrows=1, ncols=2, sharey=True)
 
-# fig, (left, right) = plt.subplots(nrows=1, ncols=2, sharey=True)
+options = dict(linestyle="--", marker=".", markersize=8)
+pivot = results.pivot(index="N", columns="piston_mach", values="error")
+for col in pivot.columns:
+    col_str = str(np.round(col, 2))
+    left.plot(pivot.index, pivot[col], label=f"$u_p = {col_str}$", **options)
+left.set_yscale("log")
+left.grid(True)
+left.set_xlabel("$N$")
+left.set_ylabel("$L_2$ Error")
 
-# options = dict(linestyle="--", marker=".", markersize=8)
-# left.plot(results["N"], results["error"], **options)
-# left.set_yscale("log")
-# left.grid(True)
-# left.set_xlabel("N")
-# left.set_ylabel("ROM L2 Error")
+pivot = results.pivot(index="energy", columns="piston_mach", values="error")
+for col in pivot.columns:
+    col_str = str(np.round(col, 2))
+    right.plot(pivot.index, pivot[col], label=f"$u_p = {col_str}$", **options)
+right.set_yscale("log")
+right.grid(True)
+right.set_xlabel("Energy")
+right.legend()
 
-# right.plot(results["energy"], results["error"], **options)
-# right.set_yscale("log")
-# right.grid(True)
-# right.set_xlabel("Energy")
-
-# plt.savefig("error_decay.png", **FIG_KWARGS)
-# plt.close()
+plt.savefig("error_decay.png", **FIG_KWARGS)
+plt.close()
 
 # # -----------------------------------------------------------------------------
 # # Error Estimator (aggregation)
+# with open("mu_space.json", "r") as fp:
+#     mu_space = ujson.load(fp)
+# mu_space = mu_space["online"]
 # paths = list(Path(".").glob("errors_estimator*.pkl"))
 # sigmas = pd.read_csv("sigmas.csv", index_col=0)["RB"].squeeze()
 
@@ -314,35 +366,37 @@ def plot_probes_comparison(comparison, save):
 
 #     payload = results_sacrificial[ONLINE]
 
-#     errors = payload[0]
-#     errors = pd.DataFrame(errors)
-#     # errors = errors.mean()
+#     for idx_mu, errors in payload.items():
+#         errors = payload[0]
+#         errors = pd.DataFrame(errors)
 
-#     # -------------------------------------------------------------------------
-#     # ROM
-#     idx_rom = n_rom - 1
-#     idx_srom = n_srom - 1
+#         # -------------------------------------------------------------------------
+#         # ROM
+#         idx_rom = n_rom - 1
+#         idx_srom = n_srom - 1
 
-#     energy_rom = energies[idx_rom]
-#     energy_srom = energies[idx_srom]
-#     delta_energy = energy_srom - energy_rom
+#         energy_rom = energies[idx_rom]
+#         energy_srom = energies[idx_srom]
+#         delta_energy = energy_srom - energy_rom
 
-#     delta_n = n_srom - n_rom
+#         delta_n = n_srom - n_rom
 
-#     delta_error = errors[Errors.ROM] - errors[Errors.ESTIMATOR]
-#     N_error = len(delta_error)
-#     delta_error = np.linalg.norm(delta_error)
-#     delta_error /= np.sqrt(N_error)
+#         delta_error = errors[Errors.ROM] - errors[Errors.ESTIMATOR]
+#         delta_error /= errors[Errors.ROM]
+#         N_error = len(delta_error)
+#         delta_error = np.linalg.norm(delta_error)
+#         delta_error /= np.sqrt(N_error)
 
-#     result = {
-#         "N": n_rom,
-#         "N-SROM": n_srom,
-#         "delta-N": delta_n,
-#         "delta-energy": delta_energy,
-#         "delta-error": delta_error,
-#     }
+#         result = {
+#             "N": n_rom,
+#             "N-SROM": n_srom,
+#             "delta-N": delta_n,
+#             "delta-energy": delta_energy,
+#             "delta-error": delta_error,
+#             "idx_mu": idx_mu,
+#         }
 
-#     results.append(result)
+#         results.append(result)
 
 
 # results = pd.DataFrame(results)
@@ -386,54 +440,57 @@ def plot_probes_comparison(comparison, save):
 # plt.close()
 
 
-# -----------------------------------------------------------------------------
-# Errors (timewise)
-paths = list(Path(".").glob("errors_estimator*.pkl"))
+#  # -----------------------------------------------------------------------------
+#  # Errors (timewise)
+# paths = list(Path(".").glob("errors_estimator*.pkl"))
 
-ONLINE = Stage.ONLINE
+# ONLINE = Stage.ONLINE
 
-desc = "(ERRORS - TIMESERIES)"
+# desc = "(ERRORS - TIMESERIES)"
 
-ts = np.linspace(0, 1.0, 500)
+# ts = np.linspace(0, 1.0, 500)
 
-for path in tqdm(paths, desc=desc, total=len(paths)):
+# for path in tqdm(paths, desc=desc, total=len(paths)):
 
-    with open(path, mode="rb") as fp:
-        results_sacrificial = pickle.load(fp)
+#     with open(path, mode="rb") as fp:
+#         results_sacrificial = pickle.load(fp)
 
-    stem = path.stem.split("_")
-    n_rom = stem[3]
-    n_srom = stem[5]
+#     stem = path.stem.split("_")
+#     n_rom = stem[3]
+#     n_srom = stem[5]
 
-    payload = results_sacrificial[ONLINE]
+#     payload = results_sacrificial[ONLINE]
 
-    for idx_mu, errors in tqdm(payload.items(), leave=False):
+#     for idx_mu, errors in tqdm(payload.items(), leave=False):
 
-        errors = pd.DataFrame(errors)
+#         errors = pd.DataFrame(errors)
 
-        errors["index"] = ts
-        errors = errors.set_index("index")
+#         errors["index"] = ts
+#         errors = errors.set_index("index")
 
-        estimator = errors[Errors.ESTIMATOR].copy()
-        errors = errors.drop(Errors.ESTIMATOR, axis=1)
+#         estimator = errors[Errors.ESTIMATOR].copy()
+#         errors = errors.drop(Errors.ESTIMATOR, axis=1)
 
-        ax = errors.plot(grid=True, logy=True)
-        ax.plot(estimator.index, estimator, label=Errors.ESTIMATOR, linestyle="--")
+#         ax = errors.plot(grid=True, logy=True)
+#         ax.plot(estimator.index, estimator, label=Errors.ESTIMATOR, linestyle="--")
 
-        ax.legend()
-        title = f"N-ROM = {n_rom}, N-SROM = {n_srom}"
-        ax.set_title(title)
-        ax.set_xlabel("t (s)")
-        ax.set_ylabel("$L_2$ Error (FOM vs. ROM)")
+#         ax.legend()
+#         title = f"N-ROM = {n_rom}, N-SROM = {n_srom}"
+#         ax.set_title(title)
+#         ax.set_xlabel("t (s)")
+#         ax.set_ylabel("$L_2$ Error (FOM vs. ROM)")
 
-        figname = f"error_estimation_rom_{n_rom}_srom_{n_srom}.png"
-        plt.savefig(figname, **FIG_KWARGS)
+#         figname = f"error_estimation_rom_{n_rom}_srom_{n_srom}_{idx_mu}.png"
+#         plt.savefig(figname, **FIG_KWARGS)
 
-        plt.close()
+#         plt.close()
 
 
 # # -----------------------------------------------------------------------------
 # # Mass conservation
+# with open("mu_space.json", "r") as fp:
+#     mu_space = ujson.load(fp)
+# mu_space = mu_space["online"]
 # MASS_CONSERVATION_FILES = list(Path(".").glob("mass_conservation_*.csv"))
 
 # desc = "(MASS CONSERVATION)"
@@ -442,12 +499,24 @@ for path in tqdm(paths, desc=desc, total=len(paths)):
 #     results = pd.read_csv(file)
 
 #     save = file.stem
-#     title = results[MassConservation.WHICH].unique()[0].upper()
+
+#     idx_mu = int(save[-1])
+#     a0 = mu_space[idx_mu][PistonParameters.A0]
+#     u_p = np.round(mu_space[idx_mu][PistonParameters.MACH_PISTON], 2)
+
+#     if "fom" in save:
+#         title = f"Mass Conservation (FOM), $u_p = {u_p}$"
+#     else:
+#         N = int(save.split("_")[3])
+#         title = f"Mass Conservation (ROM), $u_p = {u_p}$, $N = {N}$"
+
+#     outflow = results[MassConservation.OUTFLOW] / a0
+#     mass_change = results[MassConservation.MASS_CHANGE] / a0
 
 #     plot_mass_conservation(
 #         ts=results[MassConservation.TIMESTEPS],
-#         mass_change=results[MassConservation.MASS_CHANGE],
-#         outflow=results[MassConservation.OUTFLOW],
+#         mass_change=mass_change,
+#         outflow=outflow,
 #         title=title,
 #         save=save,
 #     )
@@ -465,11 +534,24 @@ for path in tqdm(paths, desc=desc, total=len(paths)):
 
 # # -----------------------------------------------------------------------------
 # # Probes with Model Comparison
-# FILES_PROBES = list(Path(".").glob("*probes_comparison*.csv"))
+# with open("mu_space.json", "r") as fp:
+#     mu_space = ujson.load(fp)
+# mu_space = mu_space["online"]
+# FILES_PROBES = list(Path(".").glob("outflow*probes_comparison*.csv"))
 
 # desc = "(MODEL COMPARISON)"
 # for file in tqdm(FILES_PROBES, desc=desc):
 
 #     probes = pd.read_csv(file, index_col=0)
 #     save = file.stem
+
+#     idx_mu = int(save[-1])
+#     a0 = mu_space[idx_mu][PistonParameters.A0]
+#     probes = probes.div(a0)
+
+#     # Include initial condition
+#     rest_condition = pd.Series(index=probes.columns, name=0.0, data=[0.0] * 4)
+#     probes = probes.append(rest_condition)
+#     probes = probes.sort_index()
+
 #     plot_probes_comparison(probes, save)

@@ -36,7 +36,7 @@ grid_params = {
 
 # -----------------------------------------------------------------------------
 # Testing phase
-LOAD_BASIS = False
+LOAD_BASIS = True
 VALIDATE_ROM = False
 EVALUATE_DEIM = False
 
