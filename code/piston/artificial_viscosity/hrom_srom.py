@@ -82,7 +82,7 @@ models = {
     OperatorType.MASS: False,
     OperatorType.STIFFNESS: True,
     OperatorType.CONVECTION: False,
-    OperatorType.NONLINEAR: False,
+    OperatorType.TRILINEAR: False,
     OperatorType.NONLINEAR_LIFTING: False,
     OperatorType.RHS: False,
 }

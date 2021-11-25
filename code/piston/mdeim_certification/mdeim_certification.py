@@ -15,6 +15,8 @@ from romtime.problems.piston import define_piston_problem
 from romtime.rom.hrom import HyperReducedPiston
 from tqdm import tqdm
 
+from romtime.utils import dump_json
+
 fenics.set_log_level(100)
 
 
@@ -86,7 +88,7 @@ models = {
     OperatorType.MASS: True,
     OperatorType.STIFFNESS: True,
     OperatorType.CONVECTION: True,
-    OperatorType.NONLINEAR: True,
+    OperatorType.TRILINEAR: True,
     OperatorType.NONLINEAR_LIFTING: True,
     OperatorType.RHS: True,
 }
@@ -176,19 +178,43 @@ if EVALUATE_DEIM:
     hrom.evaluate_deim()
 
 rom = hrom.rom
-mdeim = hrom.mdeim_nonlinear
+mdeim = hrom.mdeim_trilinear
 
 num_mu = 10
 num_psi = 10
 
 mu_space = rom.build_sampling_space(num=num_mu, rnd=RND_ONLINE)
+dump_json("mu_space_mdeim_certification.json", mu_space)
+
 
 mdeim.u_n = rom.basis[:, :num_psi]
 mdeim.evaluate(ts=ts.tolist(), mu_space=mu_space)
 
 pd.DataFrame(mdeim.errors_rom, index=ts).to_csv(f"psi_{num_psi}_full_errors.csv")
 
-modes_to_remove = [65, 55, 45, 35, 25, 15, 5, 1, 2, 3]
+modes_to_remove = [
+    65,
+    64,
+    63,
+    62,
+    61,
+    60,
+    59,
+    58,
+    57,
+    56,
+    55,
+    40,
+    45,
+    30,
+    35,
+    25,
+    15,
+    5,
+    1,
+    2,
+    3,
+]
 modes_to_remove = sorted(modes_to_remove, reverse=False)
 for n in tqdm(modes_to_remove, desc="Number of modes"):
 
