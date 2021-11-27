@@ -21,12 +21,12 @@ def F(y, params):
 
 
 NX = 1000
-T = 0.5
+T = 0.75
 
 DELTA = 0.15
 OMEGA = 2.0 * np.pi * 1
 
-params = {"mu": 0.5, "sigma": 0.1, "p": 0.25}
+params = {"mu": 0.5, "sigma": 0.1, "p": 1}
 
 X = np.linspace(0, 1, NX)
 
@@ -35,23 +35,27 @@ displacement = X * (1 + distortion) * (Lhat(T, DELTA, OMEGA) - 1)
 
 x = X + displacement
 
+# -----------------------------------------------------------------------------
+# Visualization
 fig, (top, bottom) = plt.subplots(nrows=2)
 top.plot(X, x)
 top.plot([0, 1.0], [0, 1.0], linestyle="--")
-top.plot(X, X * (Lhat(T, DELTA, OMEGA) - 1) * distortion, linestyle=":")
-top.plot(X, X * (Lhat(T, DELTA, OMEGA)), linestyle="-.")
+top.plot(X, X * (Lhat(T, DELTA, OMEGA) - 1) * distortion, linestyle=":", label = "Node concentration")
+top.plot(X, X * (Lhat(T, DELTA, OMEGA)), linestyle="-.", label = "Uniform distribution")
 top.set_xlabel("$\\mathcal{X}$")
 top.set_ylabel("$x$")
 top.grid(True)
+top.legend()
 
 Xm = (X[1:] + X[:-1]) / 2
 delta_x = np.diff(x)
 delta_X = np.diff(X)
 
-bottom.semilogy(Xm, delta_X, linestyle="--")
-bottom.semilogy(Xm, delta_x)
+bottom.semilogy(Xm, delta_X * Lhat(T, DELTA, OMEGA), linestyle="--", label = "Uniform")
+bottom.semilogy(Xm, delta_x, label = "Nonlinear")
 bottom.set_xlabel("$\\mathcal{X}_m$")
 bottom.set_ylabel("$\\Delta x$")
 bottom.grid(True)
+bottom.legend()
 plt.show()
 plt.close()
