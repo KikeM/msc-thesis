@@ -165,16 +165,18 @@ def plot_probes_comparison(comparison, save):
 summary_basis = pd.read_csv("summary_basis.csv", index_col=0)
 
 summary_basis.index.name = "Operator"
+
+PARAM_SPACE = "Param. space"
+TIME_INT = "Time int."
 summary_basis = summary_basis.rename(
     index=lambda x: x.lower().capitalize(),
     columns={
-        Treewalk.BASIS_AFTER_WALK: "After Time Integration",
-        Treewalk.BASIS_FINAL: "Final Size",
+        Treewalk.BASIS_AFTER_WALK: TIME_INT,
+        Treewalk.BASIS_FINAL: PARAM_SPACE,
     },
 )
 
-summary_basis = summary_basis.sort_values(by="Final Size", ascending=False)
-
+summary_basis = summary_basis.sort_values(by=PARAM_SPACE, ascending=False)
 summary_basis.to_latex("summary_basis.tex", index=True)
 
 # -----------------------------------------------------------------------------
