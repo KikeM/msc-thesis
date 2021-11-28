@@ -39,8 +39,6 @@ A_rt = csr_matrix((values, (rows, cols)))
 #         [-2.,  0.,  9.],
 #         [ 0.,  0.,  9.]])
 
-# breakpoint()
-
 
 domain = dict(
     L0=2.0,

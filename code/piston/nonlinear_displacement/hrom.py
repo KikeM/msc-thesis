@@ -54,7 +54,7 @@ grid_params = {
 # Testing phase
 LOAD_BASIS = False
 VALIDATE_ROM = False
-EVALUATE_DEIM = True
+EVALUATE_DEIM = False
 
 
 # -----------------------------------------------------------------------------
@@ -66,7 +66,7 @@ SROM_KEEP = 15
 SROM_TRUNCATE = SROM_KEEP - ROM_KEEP
 SROM_TRUNCATE = 1
 
-NUM_OFFLINE_DEIM = 2
+NUM_OFFLINE_DEIM = 30
 NUM_ONLINE_DEIM = 2
 NUM_ONLINE_NDEIM = 2
 NUM_PSI_NMDEIM = 5
@@ -223,7 +223,7 @@ if VALIDATE_ROM:
     hrom.dump_errors(which=Stage.VALIDATION)
 
 # -----------------------------------------------------------------------------
-
+# Online Stage
 # online_params = dict(
 #     num=NUM_ONLINE,
 #     rnd_num=RND_ONLINE,

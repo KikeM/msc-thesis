@@ -162,49 +162,132 @@ def plot_probes_comparison(comparison, save):
 # plt.close()
 
 # -----------------------------------------------------------------------------
+summary_basis = pd.read_csv("summary_basis.csv", index_col=0)
+
+summary_basis.index.name = "Operator"
+summary_basis = summary_basis.rename(
+    index=lambda x: x.lower().capitalize(),
+    columns={
+        Treewalk.BASIS_AFTER_WALK: "After Time Integration",
+        Treewalk.BASIS_FINAL: "Final Size",
+    },
+)
+
+summary_basis = summary_basis.sort_values(by="Final Size", ascending=False)
+
+summary_basis.to_latex("summary_basis.tex", index=True)
+
+# -----------------------------------------------------------------------------
 # Sigmas
-print("-----------------------------------------------------------------------------")
-print("SIGMAS")
-with open("summary_sigmas.pkl", mode="rb") as fp:
-    summary_sigmas = pickle.load(fp)
+# print("-----------------------------------------------------------------------------")
+# print("SIGMAS")
+# with open("summary_sigmas.pkl", mode="rb") as fp:
+#     summary_sigmas = pickle.load(fp)
 
-sigmas = pd.DataFrame(dtype=float)
-for operator in summary_sigmas.keys():
+# sigmas_t = pd.DataFrame(columns=["operator", "N", "sigma", "idx_mu"])
+# sigmas_mu = pd.DataFrame(dtype=float)
+# for operator in summary_sigmas.keys():
 
-    _sigmas = summary_sigmas[operator][Treewalk.SPECTRUM_MU]
-    name = operator.lower().capitalize()
-    _sigmas = pd.Series(_sigmas, name=name)
-    sigmas = pd.concat([sigmas, _sigmas], axis=1)
+#     # -------------------------------------------------------------------------
+#     # Time integration
+#     _sigmas_t = pd.DataFrame(summary_sigmas[operator][Treewalk.SPECTRUM_TIME])
+#     _sigmas_t.index.name = "N"
+#     _sigmas_t = _sigmas_t.melt(
+#         value_vars=_sigmas_t.columns,
+#         var_name="idx_mu",
+#         value_name="sigma",
+#         ignore_index=False,
+#     )
 
+#     _sigmas_t["idx_mu"] = _sigmas_t["idx_mu"].astype(int)
 
-ax_sigmas = sigmas.plot(logy=True)
-ax_sigmas.grid(True)
-ax_sigmas.set_ylabel("$\\sigma_i$")
-ax_sigmas.set_xlabel("i-th basis element")
-plt.savefig("sigmas.png", **FIG_KWARGS)
-plt.close()
+#     _sigmas_t["operator"] = operator
+#     _sigmas_t = _sigmas_t.reset_index(drop=False)
 
-print()
-# energy_nonlinear = singular_to_energy(sigmas_nonlinear)
-# energy_rb = singular_to_energy(sigmas_rb)
+#     sigmas_t = pd.concat([sigmas_t, _sigmas_t], axis=0)
 
-# energy_nonlinear = energy_nonlinear[:65]
-# energy_rb = energy_rb[:65]
+#     # -------------------------------------------------------------------------
+#     # Parameter Space
+#     _sigmas = summary_sigmas[operator][Treewalk.SPECTRUM_MU]
+#     name = operator.lower().capitalize()
+#     _sigmas = pd.Series(_sigmas, name=name)
+#     sigmas_mu = pd.concat([sigmas_mu, _sigmas], axis=1)
 
-# plt.plot(energy_nonlinear, label="Nonlinear")
-# plt.plot(energy_rb, label="RB")
-# plt.grid(True)
-# plt.legend()
-# plt.xlabel("i-th basis")
-# plt.ylabel("Energy")
-# plt.title("SVD Basis Reconstruction Capacity")
-# plt.savefig("energy_rb.png", **FIG_KWARGS)
+# fig, (top, bottom) = plt.subplots(nrows=2, sharex=True)
+
+# # Use default seaborn color palette
+# # https://www.codecademy.com/articles/seaborn-design-ii
+# num_colors = len(summary_sigmas.keys())
+# color = sns.color_palette(palette="Set1", n_colors=num_colors)
+
+# for idx_cm, operator in enumerate(summary_sigmas.keys()):
+
+#     mask = sigmas_t["operator"] == operator
+#     _sigmas_t = sigmas_t.loc[mask]
+#     _sigmas_t = _sigmas_t.pivot(index="N", columns="idx_mu", values="sigma")
+
+#     top.loglog(_sigmas_t.index, _sigmas_t.loc[:, 1:], c=color[idx_cm], alpha=0.25)
+
+#     name = operator.lower().capitalize()
+#     top.loglog(_sigmas_t.index, _sigmas_t[0], c=color[idx_cm])
+#     bottom.loglog(sigmas_mu.index, sigmas_mu[name], c=color[idx_cm], label=name)
+
+# top.set_ylabel("$\\sigma_i$")
+# top.grid(True)
+# top.set_title("SV Decay (Time Integration)")
+
+# bottom.grid(True)
+# bottom.legend()
+# bottom.set_ylabel("$\\sigma_i$")
+# bottom.set_xlabel("i-th basis element")
+# bottom.set_title("SV Decay (Parameter Space)")
+# plt.savefig("sigmas_loglog.png", **FIG_KWARGS)
 # plt.close()
 
-# energy_nonlinear = pd.Series(energy_nonlinear, name="nonlinear")
-# energy_rb = pd.Series(energy_rb, name="rb")
+# # -----------------------------------------------------------------------------
+# NUM_N = 10
+# fig, (top, bottom) = plt.subplots(nrows=2, sharex=True)
 
-# pd.concat([energy_rb, energy_nonlinear], axis=1).to_csv("energy_rb.csv")
+# # Use default seaborn color palette
+# # https://www.codecademy.com/articles/seaborn-design-ii
+# num_colors = len(summary_sigmas.keys())
+# color = sns.color_palette(palette="Set1", n_colors=num_colors)
+
+# for idx_cm, operator in enumerate(summary_sigmas.keys()):
+
+#     mask = sigmas_t["operator"] == operator
+#     _sigmas_t = sigmas_t.loc[mask]
+#     _sigmas_t = _sigmas_t.pivot(index="N", columns="idx_mu", values="sigma")
+
+#     top.semilogy(
+#         _sigmas_t.loc[:NUM_N].index,
+#         _sigmas_t.loc[:NUM_N, 1:],
+#         c=color[idx_cm],
+#         alpha=0.25,
+#     )
+
+#     name = operator.lower().capitalize()
+#     top.semilogy(_sigmas_t.loc[:NUM_N].index, _sigmas_t.loc[:NUM_N, 0], c=color[idx_cm])
+#     bottom.semilogy(
+#         sigmas_mu.loc[:NUM_N].index,
+#         sigmas_mu.loc[:NUM_N, name],
+#         c=color[idx_cm],
+#         label=name,
+#     )
+
+# top.set_ylabel("$\\sigma_i$")
+# top.grid(True)
+# top.set_title("SV Decay (Time Integration)")
+
+# bottom.grid(True)
+# bottom.legend(ncol=2)
+# bottom.set_ylabel("$\\sigma_i$")
+# bottom.set_xlabel("i-th basis element")
+# bottom.set_title("SV Decay (Parameter Space)")
+# plt.savefig("sigmas_logy.png", **FIG_KWARGS)
+# plt.close()
+
+# print()
 
 # # -----------------------------------------------------------------------------
 # # Basis Elements
@@ -441,118 +524,118 @@ print()
 # plt.close()
 
 
-# -----------------------------------------------------------------------------
-# Errors (timewise)
-paths = list(Path(".").glob("errors_estimator*.pkl"))
+# # -----------------------------------------------------------------------------
+# # Errors (timewise)
+# paths = list(Path(".").glob("errors_estimator*.pkl"))
 
-ONLINE = Stage.ONLINE
+# ONLINE = Stage.ONLINE
 
-desc = "(ERRORS - TIMESERIES)"
+# desc = "(ERRORS - TIMESERIES)"
 
-ts = np.linspace(0, 1.0, 500)
+# ts = np.linspace(0, 1.0, 500)
 
-for path in tqdm(paths, desc=desc, total=len(paths)):
+# for path in tqdm(paths, desc=desc, total=len(paths)):
 
-    with open(path, mode="rb") as fp:
-        results_sacrificial = pickle.load(fp)
+#     with open(path, mode="rb") as fp:
+#         results_sacrificial = pickle.load(fp)
 
-    stem = path.stem.split("_")
-    n_rom = stem[3]
-    n_srom = stem[5]
+#     stem = path.stem.split("_")
+#     n_rom = stem[3]
+#     n_srom = stem[5]
 
-    payload = results_sacrificial[ONLINE]
+#     payload = results_sacrificial[ONLINE]
 
-    for idx_mu, errors in tqdm(payload.items(), leave=False):
+#     for idx_mu, errors in tqdm(payload.items(), leave=False):
 
-        errors = pd.DataFrame(errors)
+#         errors = pd.DataFrame(errors)
 
-        errors["index"] = ts
-        errors = errors.set_index("index")
+#         errors["index"] = ts
+#         errors = errors.set_index("index")
 
-        estimator = errors[Errors.ESTIMATOR].copy()
-        errors = errors.drop(Errors.ESTIMATOR, axis=1)
+#         estimator = errors[Errors.ESTIMATOR].copy()
+#         errors = errors.drop(Errors.ESTIMATOR, axis=1)
 
-        ax = errors.plot(grid=True, logy=True)
-        ax.plot(estimator.index, estimator, label=Errors.ESTIMATOR, linestyle="--")
+#         ax = errors.plot(grid=True, logy=True)
+#         ax.plot(estimator.index, estimator, label=Errors.ESTIMATOR, linestyle="--")
 
-        ax.legend()
-        title = f"N-ROM = {n_rom}, N-SROM = {n_srom}"
-        ax.set_title(title)
-        ax.set_xlabel("t (s)")
-        ax.set_ylabel("$L_2$ Error (FOM vs. ROM)")
+#         ax.legend()
+#         title = f"N-ROM = {n_rom}, N-SROM = {n_srom}"
+#         ax.set_title(title)
+#         ax.set_xlabel("t (s)")
+#         ax.set_ylabel("$L_2$ Error (FOM vs. ROM)")
 
-        figname = f"error_estimation_rom_{n_rom}_srom_{n_srom}_{idx_mu}.png"
-        plt.savefig(figname, **FIG_KWARGS)
+#         figname = f"error_estimation_rom_{n_rom}_srom_{n_srom}_{idx_mu}.png"
+#         plt.savefig(figname, **FIG_KWARGS)
 
-        plt.close()
+#         plt.close()
 
 
-# -----------------------------------------------------------------------------
-# Mass conservation
-with open("mu_space.json", "r") as fp:
-    mu_space = ujson.load(fp)
-mu_space = mu_space["online"]
-MASS_CONSERVATION_FILES = list(Path(".").glob("mass_conservation_*.csv"))
+# # -----------------------------------------------------------------------------
+# # Mass conservation
+# with open("mu_space.json", "r") as fp:
+#     mu_space = ujson.load(fp)
+# mu_space = mu_space["online"]
+# MASS_CONSERVATION_FILES = list(Path(".").glob("mass_conservation_*.csv"))
 
-desc = "(MASS CONSERVATION)"
-for file in tqdm(MASS_CONSERVATION_FILES, desc=desc):
+# desc = "(MASS CONSERVATION)"
+# for file in tqdm(MASS_CONSERVATION_FILES, desc=desc):
 
-    results = pd.read_csv(file)
+#     results = pd.read_csv(file)
 
-    save = file.stem
+#     save = file.stem
 
-    idx_mu = int(save[-1])
-    a0 = mu_space[idx_mu][PistonParameters.A0]
-    u_p = np.round(mu_space[idx_mu][PistonParameters.MACH_PISTON], 2)
+#     idx_mu = int(save[-1])
+#     a0 = mu_space[idx_mu][PistonParameters.A0]
+#     u_p = np.round(mu_space[idx_mu][PistonParameters.MACH_PISTON], 2)
 
-    if "fom" in save:
-        title = f"Mass Conservation (FOM), $u_p = {u_p}$"
-    else:
-        N = int(save.split("_")[3])
-        title = f"Mass Conservation (ROM), $u_p = {u_p}$, $N = {N}$"
+#     if "fom" in save:
+#         title = f"Mass Conservation (FOM), $u_p = {u_p}$"
+#     else:
+#         N = int(save.split("_")[3])
+#         title = f"Mass Conservation (ROM), $u_p = {u_p}$, $N = {N}$"
 
-    outflow = results[MassConservation.OUTFLOW] / a0
-    mass_change = results[MassConservation.MASS_CHANGE] / a0
+#     outflow = results[MassConservation.OUTFLOW] / a0
+#     mass_change = results[MassConservation.MASS_CHANGE] / a0
 
-    plot_mass_conservation(
-        ts=results[MassConservation.TIMESTEPS],
-        mass_change=mass_change,
-        outflow=outflow,
-        title=title,
-        save=save,
-    )
+#     plot_mass_conservation(
+#         ts=results[MassConservation.TIMESTEPS],
+#         mass_change=mass_change,
+#         outflow=outflow,
+#         title=title,
+#         save=save,
+#     )
 
-# -----------------------------------------------------------------------------
-# Probes
-FILES_PROBES = list(Path(".").glob("probes*.csv"))
+# # -----------------------------------------------------------------------------
+# # Probes
+# FILES_PROBES = list(Path(".").glob("probes*.csv"))
 
-desc = "(PROBES)"
-for file in tqdm(FILES_PROBES, desc=desc):
+# desc = "(PROBES)"
+# for file in tqdm(FILES_PROBES, desc=desc):
 
-    probes = pd.read_csv(file, index_col=MassConservation.TIMESTEPS)
-    save = file.stem
-    plot_probes(probes, save)
+#     probes = pd.read_csv(file, index_col=MassConservation.TIMESTEPS)
+#     save = file.stem
+#     plot_probes(probes, save)
 
-# -----------------------------------------------------------------------------
-# Probes with Model Comparison
-with open("mu_space.json", "r") as fp:
-    mu_space = ujson.load(fp)
-mu_space = mu_space["online"]
-FILES_PROBES = list(Path(".").glob("outflow*probes_comparison*.csv"))
+# # -----------------------------------------------------------------------------
+# # Probes with Model Comparison
+# with open("mu_space.json", "r") as fp:
+#     mu_space = ujson.load(fp)
+# mu_space = mu_space["online"]
+# FILES_PROBES = list(Path(".").glob("outflow*probes_comparison*.csv"))
 
-desc = "(MODEL COMPARISON)"
-for file in tqdm(FILES_PROBES, desc=desc):
+# desc = "(MODEL COMPARISON)"
+# for file in tqdm(FILES_PROBES, desc=desc):
 
-    probes = pd.read_csv(file, index_col=0)
-    save = file.stem
+#     probes = pd.read_csv(file, index_col=0)
+#     save = file.stem
 
-    idx_mu = int(save[-1])
-    a0 = mu_space[idx_mu][PistonParameters.A0]
-    probes = probes.div(a0)
+#     idx_mu = int(save[-1])
+#     a0 = mu_space[idx_mu][PistonParameters.A0]
+#     probes = probes.div(a0)
 
-    # Include initial condition
-    rest_condition = pd.Series(index=probes.columns, name=0.0, data=[0.0] * 4)
-    probes = probes.append(rest_condition)
-    probes = probes.sort_index()
+#     # Include initial condition
+#     rest_condition = pd.Series(index=probes.columns, name=0.0, data=[0.0] * 4)
+#     probes = probes.append(rest_condition)
+#     probes = probes.sort_index()
 
-    plot_probes_comparison(probes, save)
+#     plot_probes_comparison(probes, save)
