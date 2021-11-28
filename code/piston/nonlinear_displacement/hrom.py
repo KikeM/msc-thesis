@@ -12,7 +12,6 @@ from romtime.conventions import (
 from romtime.parameters import get_uniform_dist
 from romtime.problems.piston import define_piston_problem
 from romtime.rom.hrom import HyperReducedPiston
-from romtime.utils import bilinear_to_csr, eliminate_zeros
 
 fenics.set_log_level(100)
 
@@ -37,16 +36,16 @@ grid_params = {
     # -------------------------------------------------------------------------
     # Mesh parameters
     PistonParameters.LOC: {
-        "min": 0.45,
-        "max": 0.5,
+        "min": 0.2,
+        "max": 0.75,
     },
     PistonParameters.SIGMA: {
         "min": 0.1,
-        "max": 0.15,
+        "max": 0.2,
     },
     PistonParameters.SCALE: {
         "min": 0.25,
-        "max": 0.5,
+        "max": 1.75,
     },
 }
 
@@ -60,16 +59,17 @@ EVALUATE_DEIM = True
 
 # -----------------------------------------------------------------------------
 # Snapshots size
-NUM_OFFLINE = 10
+NUM_OFFLINE = 20
 NUM_ONLINE = 1
 ROM_KEEP = 7
 SROM_KEEP = 15
 SROM_TRUNCATE = SROM_KEEP - ROM_KEEP
 SROM_TRUNCATE = 1
 
-NUM_OFFLINE_DEIM = 10
-NUM_ONLINE_DEIM = 1
-NUM_ONLINE_NDEIM = 1
+NUM_OFFLINE_DEIM = 2
+NUM_ONLINE_DEIM = 2
+NUM_ONLINE_NDEIM = 2
+NUM_PSI_NMDEIM = 5
 
 # -----------------------------------------------------------------------------
 # Tolerances
@@ -87,6 +87,7 @@ TOL_MU_NDEIM = None
 RND_OFFLINE = 0
 RND_ONLINE = 5656
 RND_DEIM = 440
+RND_DEIM_ONLINE = 7854
 
 # -----------------------------------------------------------------------------
 # Space-Time Domain
@@ -153,20 +154,23 @@ tf, nt = domain[Domain.T], domain[Domain.NT]
 ts = np.linspace(tf / nt, tf, nt // 4)
 
 deim_params = {
-    "rnd_num": RND_DEIM,
-    "ts": ts.tolist(),
+    RomParameters.RND: RND_DEIM,
+    RomParameters.RND_ONLINE: RND_DEIM_ONLINE,
+    RomParameters.TS: ts.tolist(),
     RomParameters.NUM_SNAPSHOTS: NUM_OFFLINE_DEIM,
     RomParameters.NUM_ONLINE: NUM_ONLINE_DEIM,
     RomParameters.TOL_MU: TOL_MU_DEIM,
     RomParameters.TOL_TIME: TOL_TIME_DEIM,
 }
 deim_nonlinear_params = {
-    "rnd_num": RND_DEIM,
-    "ts": ts.tolist(),
+    RomParameters.RND: RND_DEIM,
+    RomParameters.RND_ONLINE: RND_DEIM_ONLINE,
+    RomParameters.TS: ts.tolist(),
     RomParameters.NUM_SNAPSHOTS: NUM_OFFLINE_DEIM,
     RomParameters.NUM_ONLINE: NUM_ONLINE_NDEIM,
     RomParameters.TOL_MU: TOL_MU_NDEIM,
     RomParameters.TOL_TIME: TOL_TIME_NDEIM,
+    RomParameters.NUM_PSI_NMDEIM: NUM_PSI_NMDEIM,
 }
 
 hrom = HyperReducedPiston(
@@ -192,6 +196,7 @@ if LOAD_BASIS:
         hrom.evaluate_deim()
 else:
     hrom.run_offline_rom()
+    hrom.dump_mu_space("mu_space.json")
     hrom.dump_reduced_basis()
     hrom.dump_nonlinear_basis()
     hrom.run_offline_hyperreduction(evaluate=EVALUATE_DEIM)
@@ -219,15 +224,15 @@ if VALIDATE_ROM:
 
 # -----------------------------------------------------------------------------
 
-online_params = dict(
-    num=NUM_ONLINE,
-    rnd_num=RND_ONLINE,
-)
-hrom.evaluate_online(
-    params=online_params,
-    rnd=np.random.RandomState(RND_ONLINE),
-)
-hrom.dump_mu_space("mu_space.json")
+# online_params = dict(
+#     num=NUM_ONLINE,
+#     rnd_num=RND_ONLINE,
+# )
+# hrom.evaluate_online(
+#     params=online_params,
+#     rnd=np.random.RandomState(RND_ONLINE),
+# )
+# hrom.dump_mu_space("mu_space.json")
 
-with open("errors_estimator.pkl", mode="wb") as fp:
-    pickle.dump(hrom.errors, fp)
+# with open(f"errors_estimator_rom_{hrom.rom.N}_srom_{hrom.srom.N}.pkl", mode="wb") as fp:
+#     pickle.dump(hrom.errors, fp)
