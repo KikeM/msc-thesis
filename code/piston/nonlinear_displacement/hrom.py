@@ -2,6 +2,7 @@ import pickle
 
 import fenics
 import numpy as np
+import pandas as pd
 from romtime.conventions import (
     Domain,
     OperatorType,
@@ -12,6 +13,8 @@ from romtime.conventions import (
 from romtime.parameters import get_uniform_dist
 from romtime.problems.piston import define_piston_problem
 from romtime.rom.hrom import HyperReducedPiston
+
+from tqdm import tqdm
 
 fenics.set_log_level(100)
 
@@ -184,55 +187,104 @@ hrom = HyperReducedPiston(
     rnd=rnd,
 )
 
+# # -----------------------------------------------------------------------------
+# # Warm up
+# hrom.setup()
+# hrom.setup_hyperreduction()
+
+# # -----------------------------------------------------------------------------
+# # Offline stage
+# if LOAD_BASIS:
+#     hrom.start_from_existing_basis()
+#     if EVALUATE_DEIM:
+#         hrom.evaluate_deim()
+# else:
+#     hrom.run_offline_rom()
+#     hrom.dump_mu_space("mu_space.json")
+#     hrom.dump_reduced_basis()
+#     hrom.dump_nonlinear_basis()
+#     hrom.run_offline_hyperreduction(evaluate=EVALUATE_DEIM)
+#     hrom.dump_validation_fom()
+
+# hrom.project_reductors()
+
+# hrom.generate_summary()
+# hrom.dump_errors_deim()
+# hrom.dump_mu_space_deim()
+# hrom.summary_basis.to_csv("summary_basis.csv")
+
+# if not LOAD_BASIS:
+
+#     with open("summary_energy.pkl", mode="wb") as fp:
+#         pickle.dump(hrom.summary_energy, fp)
+
+#     with open("summary_sigmas.pkl", mode="wb") as fp:
+#         pickle.dump(hrom.summary_sigmas, fp)
+
+# if VALIDATE_ROM:
+#     hrom.evaluate_validation()
+#     hrom.dump_mu_space("mu_space.json")
+#     hrom.dump_errors(which=Stage.VALIDATION)
+
+# # -----------------------------------------------------------------------------
+# # Online Stage
+# # online_params = dict(
+# #     num=NUM_ONLINE,
+# #     rnd_num=RND_ONLINE,
+# # )
+# # hrom.evaluate_online(
+# #     params=online_params,
+# #     rnd=np.random.RandomState(RND_ONLINE),
+# # )
+# # hrom.dump_mu_space("mu_space.json")
+
+# # with open(f"errors_estimator_rom_{hrom.rom.N}_srom_{hrom.srom.N}.pkl", mode="wb") as fp:
+# #     pickle.dump(hrom.errors, fp)
+
 # -----------------------------------------------------------------------------
+# Error calculation for each operator
+operator = OperatorType.TRILINEAR
+NUM_ONLINE = 4
+RND = 30031989
+
+print()
+print(f"Operator: {operator}")
+print()
+
 hrom.setup()
-hrom.setup_hyperreduction()
+hrom.start_from_existing_basis(deim=False)  # To have ROM basis
+rom = hrom.rom
 
-# -----------------------------------------------------------------------------
-# Offline stage
-if LOAD_BASIS:
-    hrom.start_from_existing_basis()
-    if EVALUATE_DEIM:
-        hrom.evaluate_deim()
-else:
-    hrom.run_offline_rom()
-    hrom.dump_mu_space("mu_space.json")
-    hrom.dump_reduced_basis()
-    hrom.dump_nonlinear_basis()
-    hrom.run_offline_hyperreduction(evaluate=EVALUATE_DEIM)
-    hrom.dump_validation_fom()
+mu_space = rom.build_sampling_space(num=NUM_ONLINE, rnd=RND)
 
-hrom.project_reductors()
+# percentiles = [0.05, 0.1, 0.2, 0.4, 0.6, 0.8]
+percentiles = [None]
+# percentiles = sorted(percentiles, reverse=True)
+for p in tqdm(percentiles):
 
-hrom.generate_summary()
-hrom.dump_errors_deim()
-hrom.dump_mu_space_deim()
-hrom.summary_basis.to_csv("summary_basis.csv")
+    hrom.setup_hyperreduction()
 
-if not LOAD_BASIS:
+    if operator == OperatorType.RHS:
+        deim = hrom.deim_rhs
+    if operator == OperatorType.MASS:
+        deim = hrom.mdeim_mass
+    if operator == OperatorType.STIFFNESS:
+        deim = hrom.mdeim_stiffness
+    if operator == OperatorType.CONVECTION:
+        deim = hrom.mdeim_convection
+    if operator == OperatorType.NONLINEAR_LIFTING:
+        deim = hrom.mdeim_trilinear_lifting
+    if operator == OperatorType.TRILINEAR:
+        deim = hrom.mdeim_trilinear
 
-    with open("summary_energy.pkl", mode="wb") as fp:
-        pickle.dump(hrom.summary_energy, fp)
+    deim.load_fom_basis(keep=p)
 
-    with open("summary_sigmas.pkl", mode="wb") as fp:
-        pickle.dump(hrom.summary_sigmas, fp)
+    if operator == OperatorType.TRILINEAR:
+        deim.evaluate(ts=ts, mu_space=mu_space, funcs=rom.basis[:, :5])
+    else:
+        deim.evaluate(ts=ts, mu_space=mu_space)
 
-if VALIDATE_ROM:
-    hrom.evaluate_validation()
-    hrom.dump_mu_space("mu_space.json")
-    hrom.dump_errors(which=Stage.VALIDATION)
+    errors = pd.DataFrame(deim.errors_rom)
 
-# -----------------------------------------------------------------------------
-# Online Stage
-# online_params = dict(
-#     num=NUM_ONLINE,
-#     rnd_num=RND_ONLINE,
-# )
-# hrom.evaluate_online(
-#     params=online_params,
-#     rnd=np.random.RandomState(RND_ONLINE),
-# )
-# hrom.dump_mu_space("mu_space.json")
-
-# with open(f"errors_estimator_rom_{hrom.rom.N}_srom_{hrom.srom.N}.pkl", mode="wb") as fp:
-#     pickle.dump(hrom.errors, fp)
+    name = f"errors_deim_{operator.lower()}_N_{deim.N}_p_{p}.csv"
+    errors.to_csv(name)

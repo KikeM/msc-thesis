@@ -22,6 +22,9 @@ from tqdm import tqdm
 
 sns.set_theme(context="paper", palette="colorblind")
 
+# SNS_SET = "Paired"
+SNS_SET = "Set1"
+
 
 def plot_mass_conservation(ts, mass_change, outflow, title, save):
 
@@ -161,135 +164,144 @@ def plot_probes_comparison(comparison, save):
 # plt.savefig("energy_rb.png", **FIG_KWARGS)
 # plt.close()
 
-# -----------------------------------------------------------------------------
-summary_basis = pd.read_csv("summary_basis.csv", index_col=0)
+# # -----------------------------------------------------------------------------
+# # Summary Basis
+# summary_basis = pd.read_csv("summary_basis.csv", index_col=0)
 
-summary_basis.index.name = "Operator"
+# summary_basis.index.name = "Operator"
 
-PARAM_SPACE = "Param. space"
-TIME_INT = "Time int."
-summary_basis = summary_basis.rename(
-    index=lambda x: x.lower().capitalize(),
-    columns={
-        Treewalk.BASIS_AFTER_WALK: TIME_INT,
-        Treewalk.BASIS_FINAL: PARAM_SPACE,
-    },
-)
+# PARAM_SPACE = "Param. space"
+# TIME_INT = "Time int."
+# summary_basis = summary_basis.rename(
+#     index=lambda x: x.lower().capitalize(),
+#     columns={
+#         Treewalk.BASIS_AFTER_WALK: TIME_INT,
+#         Treewalk.BASIS_FINAL: PARAM_SPACE,
+#     },
+# )
 
-summary_basis = summary_basis.sort_values(by=PARAM_SPACE, ascending=False)
-summary_basis.to_latex("summary_basis.tex", index=True)
+# summary_basis = summary_basis.sort_values(by=PARAM_SPACE, ascending=False)
+# summary_basis.to_latex("summary_basis.tex", index=True)
 
 # -----------------------------------------------------------------------------
 # Sigmas
-# print("-----------------------------------------------------------------------------")
-# print("SIGMAS")
-# with open("summary_sigmas.pkl", mode="rb") as fp:
-#     summary_sigmas = pickle.load(fp)
+print("-----------------------------------------------------------------------------")
+print("SIGMAS")
+with open("summary_sigmas.pkl", mode="rb") as fp:
+    summary_sigmas = pickle.load(fp)
 
-# sigmas_t = pd.DataFrame(columns=["operator", "N", "sigma", "idx_mu"])
-# sigmas_mu = pd.DataFrame(dtype=float)
-# for operator in summary_sigmas.keys():
+sigmas_t = pd.DataFrame(columns=["operator", "N", "sigma", "idx_mu"])
+sigmas_mu = pd.DataFrame(dtype=float)
 
-#     # -------------------------------------------------------------------------
-#     # Time integration
-#     _sigmas_t = pd.DataFrame(summary_sigmas[operator][Treewalk.SPECTRUM_TIME])
-#     _sigmas_t.index.name = "N"
-#     _sigmas_t = _sigmas_t.melt(
-#         value_vars=_sigmas_t.columns,
-#         var_name="idx_mu",
-#         value_name="sigma",
-#         ignore_index=False,
-#     )
 
-#     _sigmas_t["idx_mu"] = _sigmas_t["idx_mu"].astype(int)
+for operator in summary_sigmas.keys():
 
-#     _sigmas_t["operator"] = operator
-#     _sigmas_t = _sigmas_t.reset_index(drop=False)
+    # -------------------------------------------------------------------------
+    # Time integration
+    _sigmas_t = pd.DataFrame(summary_sigmas[operator][Treewalk.SPECTRUM_TIME])
+    _sigmas_t.index.name = "N"
+    _sigmas_t = _sigmas_t.melt(
+        value_vars=_sigmas_t.columns,
+        var_name="idx_mu",
+        value_name="sigma",
+        ignore_index=False,
+    )
 
-#     sigmas_t = pd.concat([sigmas_t, _sigmas_t], axis=0)
+    _sigmas_t["idx_mu"] = _sigmas_t["idx_mu"].astype(int)
 
-#     # -------------------------------------------------------------------------
-#     # Parameter Space
-#     _sigmas = summary_sigmas[operator][Treewalk.SPECTRUM_MU]
-#     name = operator.lower().capitalize()
-#     _sigmas = pd.Series(_sigmas, name=name)
-#     sigmas_mu = pd.concat([sigmas_mu, _sigmas], axis=1)
+    _sigmas_t["operator"] = operator.lower()
+    _sigmas_t = _sigmas_t.reset_index(drop=False)
 
-# fig, (top, bottom) = plt.subplots(nrows=2, sharex=True)
+    sigmas_t = pd.concat([sigmas_t, _sigmas_t], axis=0)
 
-# # Use default seaborn color palette
-# # https://www.codecademy.com/articles/seaborn-design-ii
-# num_colors = len(summary_sigmas.keys())
-# color = sns.color_palette(palette="Set1", n_colors=num_colors)
+    # -------------------------------------------------------------------------
+    # Parameter Space
+    _sigmas = summary_sigmas[operator][Treewalk.SPECTRUM_MU]
+    name = operator.lower().capitalize()
+    _sigmas = pd.Series(_sigmas, name=name)
+    sigmas_mu = pd.concat([sigmas_mu, _sigmas], axis=1)
 
-# for idx_cm, operator in enumerate(summary_sigmas.keys()):
 
-#     mask = sigmas_t["operator"] == operator
-#     _sigmas_t = sigmas_t.loc[mask]
-#     _sigmas_t = _sigmas_t.pivot(index="N", columns="idx_mu", values="sigma")
+operators = [op.lower() for op in summary_sigmas.keys()]
+operators = sorted(operators)
 
-#     top.loglog(_sigmas_t.index, _sigmas_t.loc[:, 1:], c=color[idx_cm], alpha=0.25)
+print(operators)
 
-#     name = operator.lower().capitalize()
-#     top.loglog(_sigmas_t.index, _sigmas_t[0], c=color[idx_cm])
-#     bottom.loglog(sigmas_mu.index, sigmas_mu[name], c=color[idx_cm], label=name)
+fig, (top, bottom) = plt.subplots(nrows=2, sharex=True)
 
-# top.set_ylabel("$\\sigma_i$")
-# top.grid(True)
-# top.set_title("SV Decay (Time Integration)")
+# Use default seaborn color palette
+# https://www.codecademy.com/articles/seaborn-design-ii
+num_colors = len(summary_sigmas.keys())
+color = sns.color_palette(palette=SNS_SET, n_colors=num_colors)
 
-# bottom.grid(True)
-# bottom.legend()
-# bottom.set_ylabel("$\\sigma_i$")
-# bottom.set_xlabel("i-th basis element")
-# bottom.set_title("SV Decay (Parameter Space)")
-# plt.savefig("sigmas_loglog.png", **FIG_KWARGS)
-# plt.close()
+for idx_cm, operator in enumerate(operators):
 
-# # -----------------------------------------------------------------------------
-# NUM_N = 10
-# fig, (top, bottom) = plt.subplots(nrows=2, sharex=True)
+    mask = sigmas_t["operator"] == operator
+    _sigmas_t = sigmas_t.loc[mask]
+    _sigmas_t = _sigmas_t.pivot(index="N", columns="idx_mu", values="sigma")
 
-# # Use default seaborn color palette
-# # https://www.codecademy.com/articles/seaborn-design-ii
-# num_colors = len(summary_sigmas.keys())
-# color = sns.color_palette(palette="Set1", n_colors=num_colors)
+    top.loglog(_sigmas_t.index, _sigmas_t.loc[:, 1:], c=color[idx_cm], alpha=0.25)
 
-# for idx_cm, operator in enumerate(summary_sigmas.keys()):
+    name = operator.lower().capitalize()
+    top.loglog(_sigmas_t.index, _sigmas_t[0], c=color[idx_cm])
+    bottom.loglog(sigmas_mu.index, sigmas_mu[name], c=color[idx_cm], label=name)
 
-#     mask = sigmas_t["operator"] == operator
-#     _sigmas_t = sigmas_t.loc[mask]
-#     _sigmas_t = _sigmas_t.pivot(index="N", columns="idx_mu", values="sigma")
+top.set_ylabel("$\\sigma_i$")
+top.grid(True)
+top.set_title("SV Decay (Time Integration)")
 
-#     top.semilogy(
-#         _sigmas_t.loc[:NUM_N].index,
-#         _sigmas_t.loc[:NUM_N, 1:],
-#         c=color[idx_cm],
-#         alpha=0.25,
-#     )
+bottom.grid(True)
+bottom.legend()
+bottom.set_ylabel("$\\sigma_i$")
+bottom.set_xlabel("i-th basis element")
+bottom.set_title("SV Decay (Parameter Space)")
+plt.savefig("sigmas_loglog.png", **FIG_KWARGS)
+plt.close()
 
-#     name = operator.lower().capitalize()
-#     top.semilogy(_sigmas_t.loc[:NUM_N].index, _sigmas_t.loc[:NUM_N, 0], c=color[idx_cm])
-#     bottom.semilogy(
-#         sigmas_mu.loc[:NUM_N].index,
-#         sigmas_mu.loc[:NUM_N, name],
-#         c=color[idx_cm],
-#         label=name,
-#     )
+# -----------------------------------------------------------------------------
+NUM_N = 10
+fig, (top, bottom) = plt.subplots(nrows=2, sharex=True)
 
-# top.set_ylabel("$\\sigma_i$")
-# top.grid(True)
-# top.set_title("SV Decay (Time Integration)")
+# Use default seaborn color palette
+# https://www.codecademy.com/articles/seaborn-design-ii
+num_colors = len(summary_sigmas.keys())
+color = sns.color_palette(palette=SNS_SET, n_colors=num_colors)
 
-# bottom.grid(True)
-# bottom.legend(ncol=2)
-# bottom.set_ylabel("$\\sigma_i$")
-# bottom.set_xlabel("i-th basis element")
-# bottom.set_title("SV Decay (Parameter Space)")
-# plt.savefig("sigmas_logy.png", **FIG_KWARGS)
-# plt.close()
+for idx_cm, operator in enumerate(operators):
 
-# print()
+    mask = sigmas_t["operator"] == operator
+    _sigmas_t = sigmas_t.loc[mask]
+    _sigmas_t = _sigmas_t.pivot(index="N", columns="idx_mu", values="sigma")
+
+    top.semilogy(
+        _sigmas_t.loc[:NUM_N].index,
+        _sigmas_t.loc[:NUM_N, 1:],
+        c=color[idx_cm],
+        alpha=0.25,
+    )
+
+    name = operator.lower().capitalize()
+    top.semilogy(_sigmas_t.loc[:NUM_N].index, _sigmas_t.loc[:NUM_N, 0], c=color[idx_cm])
+    bottom.semilogy(
+        sigmas_mu.loc[:NUM_N].index,
+        sigmas_mu.loc[:NUM_N, name],
+        c=color[idx_cm],
+        label=name,
+    )
+
+top.set_ylabel("$\\sigma_i$")
+top.grid(True)
+top.set_title("SV Decay (Time Integration)")
+
+bottom.grid(True)
+bottom.legend(ncol=2)
+bottom.set_ylabel("$\\sigma_i$")
+bottom.set_xlabel("i-th basis element")
+bottom.set_title("SV Decay (Parameter Space)")
+plt.savefig("sigmas_logy.png", **FIG_KWARGS)
+plt.close()
+
+print()
 
 # # -----------------------------------------------------------------------------
 # # Basis Elements
@@ -641,3 +653,86 @@ summary_basis.to_latex("summary_basis.tex", index=True)
 #     probes = probes.sort_index()
 
 #     plot_probes_comparison(probes, save)
+
+# -----------------------------------------------------------------------------
+# Operators error decay
+print("Error Decay")
+FILES_ERRORS = list(Path(".").glob("errors_deim*.csv"))
+
+operators = []
+errors = pd.DataFrame(columns=["0", "1", "2", "3", "operator"])
+for file in FILES_ERRORS:
+
+    stem = file.stem.split("_")
+
+    p = stem[-1]
+    if p == "None":
+        p = 1.0
+    else:
+        p = float(p)
+    operator = stem[2]
+
+    operators.append(operator)
+
+    # -------------------------------------------------------------------------
+    # Time integration
+    _errors = pd.read_csv(file, index_col=0)
+    _errors.index.name = "ts"
+    _errors = _errors.mean(axis=0)
+    _errors.name = p
+    _errors = pd.DataFrame(_errors).T
+    _errors["operator"] = operator
+
+    errors = pd.concat([errors, _errors], axis=0)
+
+errors = errors.sort_values(by="operator")
+operators = list(set(operators))
+operators.append("reduced-basis")
+operators = sorted(operators)
+
+print(operators)
+
+# # Use default seaborn color palette
+# # https://www.codecademy.com/articles/seaborn-design-ii
+num_colors = len(operators)
+color = sns.color_palette(palette=SNS_SET, n_colors=num_colors)
+fig, ax = plt.subplots()
+
+for idx_color, op in enumerate(operators):
+
+    if op == "reduced-basis":
+        continue
+
+    mask = errors["operator"] == op
+
+    errors_plot = errors.loc[mask]
+    errors_plot = errors_plot.drop("operator", axis=1)
+    errors_plot = errors_plot.sort_index()
+
+    mean = errors_plot.mean(axis=1)
+
+    c = color[idx_color]
+    name = op.capitalize()
+
+    ax.semilogy(
+        errors_plot.index, errors_plot.iloc[:, 1:], c=c, alpha=0.5, linewidth=0.75
+    )
+    ax.semilogy(
+        errors_plot.index, errors_plot.iloc[:, 0], c=c, alpha=0.5, linewidth=0.75
+    )
+    ax.semilogy(
+        mean.index,
+        mean,
+        c=c,
+        linestyle="--",
+        label=name,
+        linewidth=1.5
+    )
+
+ax.grid(True)
+ax.legend(title="Avg.")
+ax.set_xlabel("Basis Percentile")
+ax.set_ylabel("Time avg. $L_2$ Error")
+ax.set_title("Operators Error Decay")
+plt.savefig("operators_error_decay_percentile.png", **FIG_KWARGS)
+plt.close()
